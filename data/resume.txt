@@ -1,0 +1,60 @@
+Ashu Surana
+Fullstack Developer, Stockholm, Sweden, Hybrid/Remote
+Email: surana.ashu@gmail.com
+LinkedIn: linkedin.com/in/ashu-surana
+
+Key Competencies:
+Full Stack Developer with experience designing and building modern web applications using Python, Django, Flask, React.js, and SQL. Working on an AI-powered Coach application, contributing to intelligent, data-driven user experiences. Skilled in full-stack development across UI, application logic, and platform integration, with experience in visualization and e-commerce solutions. Comfortable working in Agile, hybrid teams and motivated by building scalable, real-world products.
+
+Skills:
+Languages: Python, Javascript, C, C++, C#
+Frontend: React.js, Next.js, HTML5, CSS3, TailwindCSS, Bootstrap, Chart.js
+Backend: Django, Flask, REST APIs, Authentication, MVC Architecture
+Databases: PostgreSQL, MySQL, SQL, Prisma ORM, Firebase, MongoDB
+Cloud & DevOps: Azure, Docker
+Tools & Platforms: Git, Github, Asana, Jira, Agile/Scrum, Shopify
+
+Experience:
+Zebrain, Full Stack Developer, Sweden, Oct 2025 - Feb 2026
+- Developed AI Coach application integrating AI-driven functionality into a full-stack web platform
+- Built and maintained features using Python, Django, and React in Agile team environment
+- Collaborated cross-functionally to translate product requirements into scalable solutions
+
+Linespotting AB, Full Stack Engineer (Intern)
+- Developed Real-Time Energy Monitoring Dashboard using React.js and Flask
+- Implemented interactive data visualizations with Chart.js and responsive UI using Bootstrap
+- Integrated Firebase authentication for secure user access
+
+Multiple Institutes, College Lecturer, Sep 2024 - Dec 2024, Mar 2004 - Dec 2007
+- Taught core computer science subjects including C, Data Structures, SQL, DBMS, Prolog, and Programming Fundamentals
+- Delivered theory and practical sessions focused on building strong programming foundations
+- Guided students through problem-solving, structured coding, and applied database concepts
+
+Education:
+Lexicon IT Proffs, System Developer, Python and IT Security, Stockholm
+- Frontend & Backend: HTML, CSS, JavaScript, Bootstrap, Python, Django, Flask, UX/UI (Figma)
+- Database: SQL, NoSQL, MongoDB, Cosmos, MySQL, SQLite
+- Tools & Platforms: Git, GitHub, Scrum/Agile, Miro
+- Cloud services: Azure, DevOps, Docker
+- AI and Blockchain: Machine Learning, Deep Learning, NLP, Blockchain
+- Project: E-commerce Web Project using Django, JavaScript, HTML, CSS, MySQL
+
+Udacity, SQL Nanodegree, Jan 2021
+- Completed SQL nanodegree focusing on advanced SQL, data modeling, relational & non-relational databases
+- Project: Deforestation Analysis and Udiddit, a social news aggregator
+
+MDU, Masters in Technology, Computer Science and Technology, Rohtak, India
+ITM College of Engg. and Technology, Bachelor of Engineering, Computer Science and Engineering, Gurgaon, India
+
+Courses:
+- Machine Learning model deployment with Flask, React, and NodeJS | Udemy, Feb 2025
+- Data Fundamentals | IBM SkillBuild, Nov 2024
+- Artificial Intelligence Fundamentals | IBM SkillBuild, Oct 2024
+- Introduction to Database Design with MySQL | Upgrade
+- Introduction to HTML, JavaScript, and CSS | Udacity, Sep 2023
+- Salesforce Administration | Croma Campus, Feb 2022 – May 2022
+
+Languages:
+English - Professional
+Swedish - Conversational
+Hindi - Mother tongue
