@@ -45,7 +45,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "extract_skills",
-            "description": "Extract key skills from a job description",
+            "description": "Use AI to extract technical skills (Python, React, SQL, etc.) from job description",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -93,42 +93,59 @@ tools = [
 ]
 
 # TOOL EXECUTION ROUTER
-def execute_tool(name, args):
-    global jobs_fetched
+def execute_tool(name, args, state):
+    global jobs_fetched, job_skills_extracted
 
     if name == "search_jobs":
         if jobs_fetched:
-            print("⛔ Skipping duplicate search_jobs")
+            print(" Skipping duplicate search_jobs")
             return "Jobs already fetched"
 
         jobs_fetched = True
-        return search_jobs(args["query"])
+        return search_jobs(args.get("query", ""))
 
-    
     elif name == "extract_skills":
-        return extract_skills(args["job_description"])
-    
+        if job_skills_extracted:
+            print(" Skipping duplicate extract_skills")
+            return "Already extracted"
+
+        job_skills_extracted = True
+        return extract_skills(args.get("job_description", "")[:1000])
+
     elif name == "extract_resume_skills":
-        return extract_resume_skills(args["resume_text"])
+        return extract_resume_skills(args.get("resume_text", ""))
 
     elif name == "compare_skills":
+        #  Use STATE instead of LLM args (important)
         return compare_skills(
-            args["resume_skills"],
-            args["job_skills"]
+            state.get("resume_skills", ""),
+            state.get("job_skills", "")
         )
+
     return "Unknown tool"
 
 
 # MAIN AGENT LOOP
 def run_agent(user_input, resume_text=None):
-    global jobs_fetched
+    global jobs_fetched, job_skills_extracted
+
+    # ✅ Reset flags
     jobs_fetched = False
+    job_skills_extracted = False
+
+    # ✅ Add state (memory)
+    state = {
+        "job": None,
+        "job_skills": None,
+        "resume_skills": None
+    }
+
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": user_input}
     ]
 
-    # Optional: inject resume into context
+    # Inject resume
     if resume_text:
         messages.append({
             "role": "system",
@@ -137,22 +154,18 @@ def run_agent(user_input, resume_text=None):
 
     print("\n🚀 Starting Agent...\n")
 
-    # Prevent infinite loops
     for step in range(7):
         print(f"\n--- AGENT STEP {step + 1} ---")
 
-        
         response = client.chat.completions.create(
-            model="gpt-4.1-mini",  # low-cost model
+            model="gpt-4.1-mini",
             messages=messages,
             tools=tools
         )
 
         msg = response.choices[0].message
 
-        
         # TOOL CALL HANDLING
-        
         if msg.tool_calls:
             messages.append(msg)
 
@@ -167,9 +180,20 @@ def run_agent(user_input, resume_text=None):
                     print("❌ JSON parsing error:", e)
                     args = {}
 
-                result = execute_tool(tool_name, args)
+                # ✅ Execute tool with state
+                result = execute_tool(tool_name, args, state)
 
                 print(f"📤 Tool result: {result}")
+
+                # ✅ Save to state
+                if tool_name == "search_jobs":
+                    state["job"] = result
+
+                elif tool_name == "extract_skills":
+                    state["job_skills"] = result
+
+                elif tool_name == "extract_resume_skills":
+                    state["resume_skills"] = result
 
                 messages.append({
                     "role": "tool",
@@ -177,9 +201,6 @@ def run_agent(user_input, resume_text=None):
                     "content": result
                 })
 
-        
-        # FINAL RESPONSE
-        
         else:
             print("\n✅ FINAL ANSWER:\n")
             print(msg.content)

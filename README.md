@@ -8,13 +8,13 @@ An intelligent **agentic AI system** built using Python and OpenAI SDK that auto
 
 This project demonstrates a **multi-step autonomous agent** that:
 
-* Searches real-time job listings
-* Extracts required skills from job descriptions
-* Extracts skills from a candidate’s resume
-* Compares both using structured logic
-* Generates actionable recommendations
+* Searches and ranks real-time job listings using a multi-factor scoring algorithm
+* Extracts required skills from job descriptions using an **LLM** (`gpt-4.1-mini`)
+* Extracts skills from a candidate's resume using keyword matching + alias normalization
+* Compares both skill sets to surface strengths and gaps
+* Generates a final structured answer with actionable recommendations
 
-The system uses **tool-calling + reasoning loop**, simulating how modern AI agents operate.
+The system uses a **tool-calling + reasoning loop with stateful memory**, simulating how modern AI agents operate.
 
 ---
 
@@ -22,16 +22,17 @@ The system uses **tool-calling + reasoning loop**, simulating how modern AI agen
 
 *  **Job Search Integration**
 
-  * Fetches jobs using public APIs (Remotive)
+  * Fetches jobs from Remotive API with smart 5-layer scoring (hard filters, role alignment, skill boost, penalties, ranking)
 
 *  **Multi-step Agent Workflow**
 
-  * Tool-based execution (search → extract → compare → recommend)
+  * Tool-based execution with state tracking (search → extract (LLM) → resume parse → compare → final answer)
+  * Deduplication guards prevent redundant tool calls
 
 *  **Skill Extraction Engine**
 
-  * From job descriptions
-  * From resume text
+  * From job descriptions — LLM-powered (`extract_skills`)
+  * From resume text — keyword matching with alias normalization (`extract_resume_skills`)
 
 *  **Skill Gap Analysis**
 
@@ -48,11 +49,11 @@ The system uses **tool-calling + reasoning loop**, simulating how modern AI agen
 
 ### Agent Workflow
 
-1. **Search Jobs**
-2. **Extract Job Skills**
-3. **Extract Resume Skills**
-4. **Compare Skills**
-5. **Generate Final Insights**
+1. **Search Jobs** — queries Remotive API, scores and returns the top-ranked job
+2. **Extract Job Skills (LLM)** — uses `gpt-4.1-mini` to extract concrete technical skills from the job description
+3. **Extract Resume Skills** — keyword matching against a curated skill list with alias normalization
+4. **Compare Skills** — set intersection/difference to identify strengths and gaps
+5. **Final Structured Answer** — LLM synthesizes all tool results into a coherent recommendation
 
 ---
 
@@ -111,6 +112,7 @@ python main.py
 * REST APIs (Remotive jobs)
 * Regex / text processing
 * Tool-calling architecture
+* `python-dotenv` for environment management
 
 ---
 
