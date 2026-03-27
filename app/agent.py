@@ -129,34 +129,31 @@ def execute_tool(name, args, state):
 def run_agent(user_input, resume_text=None):
     global jobs_fetched, job_skills_extracted
 
-    # ✅ Reset flags
+    # Reset flags
     jobs_fetched = False
     job_skills_extracted = False
 
-    # ✅ Add state (memory)
+    # State memory
     state = {
         "job": None,
         "job_skills": None,
         "resume_skills": None
     }
 
+    job_data = None
+
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": user_input}
     ]
 
-    # Inject resume
     if resume_text:
         messages.append({
             "role": "system",
             "content": f"User Resume:\n{resume_text}"
         })
 
-    print("\n🚀 Starting Agent...\n")
-
     for step in range(7):
-        print(f"\n--- AGENT STEP {step + 1} ---")
-
         response = client.chat.completions.create(
             model="gpt-4.1-mini",
             messages=messages,
@@ -165,33 +162,28 @@ def run_agent(user_input, resume_text=None):
 
         msg = response.choices[0].message
 
-        # TOOL CALL HANDLING
         if msg.tool_calls:
             messages.append(msg)
 
             for call in msg.tool_calls:
                 tool_name = call.function.name
-                print(f"🧠 Agent decided to use: {tool_name}")
-                print(f"🔧 Calling tool: {tool_name}")
 
                 try:
                     args = json.loads(call.function.arguments)
-                except Exception as e:
-                    print("❌ JSON parsing error:", e)
+                except:
                     args = {}
 
-                # ✅ Execute tool with state
-                result = execute_tool(tool_name, args, state)
+                result = execute_tool(tool_name, args, state)  # ← pass state
 
-                print(f"📤 Tool result: {result}")
-
-                # ✅ Save to state
+                # Save to state
                 if tool_name == "search_jobs":
                     state["job"] = result
-
+                    try:
+                        job_data = json.loads(result)
+                    except:
+                        job_data = None
                 elif tool_name == "extract_skills":
                     state["job_skills"] = result
-
                 elif tool_name == "extract_resume_skills":
                     state["resume_skills"] = result
 
@@ -202,9 +194,6 @@ def run_agent(user_input, resume_text=None):
                 })
 
         else:
-            print("\n✅ FINAL ANSWER:\n")
-            print(msg.content)
-            break
+            return msg.content, job_data
 
-    else:
-        print("\n⚠️ Agent stopped (max steps reached)")
+    return "Agent stopped", job_data

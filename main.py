@@ -5,4 +5,16 @@ with open("data/resume.txt") as f:
 
 if __name__ == "__main__":
     user_input = input("What do you want? ")
-    run_agent(user_input, resume)
+
+    print("\nPaste your resume (press Enter twice to finish):\n")
+
+    lines = []
+    while True:
+        line = input()
+        if line == "":
+            break
+        lines.append(line)
+
+    resume_text = "\n".join(lines)
+
+    run_agent(user_input, resume_text)

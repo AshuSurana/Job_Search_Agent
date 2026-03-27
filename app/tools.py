@@ -65,6 +65,7 @@ def search_jobs(query: str) -> str:
 
         for job in jobs:
             title = job["title"].lower()
+            company = job.get("company_name", "Unknown").lower()
             description = clean_html(job["description"]).lower()
             text = title + " " + description
 
@@ -128,6 +129,8 @@ def search_jobs(query: str) -> str:
             if score >= 4:
                 results.append({
                     "title": job["title"],
+                    "company": job.get("company_name", "Unknown"),
+                    "url": job.get("url", ""),
                     "description": description[:300],
                     "score": score
                 })
@@ -137,7 +140,7 @@ def search_jobs(query: str) -> str:
 
         results = sorted(results, key=lambda x: x["score"], reverse=True)
 
-        return str(results[0])
+        return json.dumps(results[0])
 
     except Exception as e:
         return f"Error: {str(e)}"

@@ -32,10 +32,16 @@ STOP CONDITION:
 - After compare_skills is completed, you MUST provide the final answer.
 - DO NOT call any more tools after compare_skills.
 
+Include job title, company name, and short description(2-3 lines) in JOB SUMMARY.
+
 FINAL ANSWER FORMAT (STRICT):
 
 JOB SUMMARY:
 ...
+Title:
+Company:
+Description:
+....
 
 CANDIDATE STRENGTHS:
 ...
