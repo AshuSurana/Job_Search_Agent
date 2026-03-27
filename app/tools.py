@@ -65,87 +65,78 @@ def search_jobs(query: str) -> str:
 
         for job in jobs:
             title = job["title"].lower()
-            company = job.get("company_name", "Unknown").lower()
+            company = job.get("company_name", "Unknown")
             description = clean_html(job["description"]).lower()
             text = title + " " + description
 
             score = 0
 
-            # 1. HARD FILTERS (strict reject)
-            
-            # Must include Python
-            if "python" not in text:
-                continue
-
-            # Remove unwanted roles
-            if any(x in title for x in ["trader", "sales", "marketing"]):
-                continue
-
-            # Remove senior roles
-            if any(x in title for x in ["senior", "lead", "architect", "principal"]):
-                continue
-
-            # 2. BASE SCORING (query match)
+            # 1. QUERY MATCH
             
             for word in query_words:
                 if word in text:
-                    score += 1
+                    score += 2
 
-            # 3. ROLE ALIGNMENT (important)
+            # 2. ROLE ALIGNMENT
            
             if any(x in title for x in [
-                "engineer",
-                "developer",
-                "ai",
-                "ml",
-                "fullstack",
-                "full stack",
-                "backend"
+                "engineer", "developer", "ai", "ml",
+                "fullstack", "full stack", "backend"
             ]):
                 score += 3
 
-            # Extra boost for fullstack
-            if "fullstack" in title or "full stack" in title:
-                score += 3
-
-            # 4. SKILL BOOST (your profile)
+            # 3. SKILL BOOST
            
-            # AI boost
-            if any(x in text for x in ["ai", "machine learning", "ml", "llm"]):
-                score += 3
-
-            # Fullstack boost
-            if any(x in text for x in ["react", "django", "flask", "javascript"]):
+            if any(x in text for x in ["python", "django", "flask"]):
                 score += 2
 
-            # 5. PENALTIES (soft filtering)
-           
-            if any(x in title for x in ["data engineer", "databricks", "etl"]):
-                if not any(x in title for x in ["developer", "engineer"]):
-                    score -= 2
+            if any(x in text for x in ["react", "javascript"]):
+                score += 2
 
-            # FINAL SELECTION
-           
-            if score >= 4:
-                results.append({
-                    "title": job["title"],
-                    "company": job.get("company_name", "Unknown"),
-                    "url": job.get("url", ""),
-                    "description": description[:300],
-                    "score": score
-                })
+            if any(x in text for x in ["machine learning", "ai", "llm"]):
+                score += 2
 
-        if not results:
-            return "No relevant Python AI / Fullstack jobs found."
+            # 4. SOFT PENALTIES (NOT REMOVE)
+            
+            if any(x in title for x in ["trader", "sales", "marketing"]):
+                score -= 2
 
+            if any(x in title for x in ["senior", "lead", "architect"]):
+                score -= 1
+
+            # 5. ALWAYS ADD (NO HARD FILTER)
+            
+            results.append({
+                "title": job["title"],
+                "company": company,
+                "url": job.get("url", ""),
+                "description": description[:250],
+                "score": score
+            })
+
+        # SORT & RETURN TOP 3
+        
         results = sorted(results, key=lambda x: x["score"], reverse=True)
 
-        return json.dumps(results[0])
+        print(f"Total jobs processed: {len(results)}")  # debug
+
+        return json.dumps(results[:3])
 
     except Exception as e:
         return f"Error: {str(e)}"
 
 
+def get_jobs_only(query):
+    import json
+    from app.tools import search_jobs
+
+    result = search_jobs(query)
+
+    try:
+        return json.loads(result)
+    except:
+        return []
+    
 def analyze_resume(resume_text: str) -> str:
     strengths = []
     weaknesses = []

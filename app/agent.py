@@ -140,7 +140,7 @@ def run_agent(user_input, resume_text=None):
         "resume_skills": None
     }
 
-    job_data = None
+    job_data = []
 
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -181,7 +181,7 @@ def run_agent(user_input, resume_text=None):
                     try:
                         job_data = json.loads(result)
                     except:
-                        job_data = None
+                        job_data = []
                 elif tool_name == "extract_skills":
                     state["job_skills"] = result
                 elif tool_name == "extract_resume_skills":
