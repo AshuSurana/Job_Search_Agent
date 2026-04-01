@@ -1,126 +1,134 @@
-# Autonomous Job Search Copilot (AI Agent)
+# Autonomous Job Search Copilot
 
-An intelligent **agentic AI system** built using Python and OpenAI SDK that automates job search, analyzes candidate skills, and identifies gaps against real-world job requirements.
+An AI-powered job search application that helps candidates discover relevant jobs, evaluate how well their resume matches role requirements, and identify the skills they need to improve.
 
----
+Built with Python, Streamlit, and the OpenAI API, this project demonstrates how LLMs can work alongside APIs and rule-based logic to solve a practical real-world problem in career discovery and skill evaluation.
 
-## Overview
+## Why This Project Matters
 
-This project demonstrates a **multi-step autonomous agent** that:
+Job seekers often know what roles they want, but it is harder to understand how well their current profile fits a job and what specific skills are missing. This project addresses that gap by turning a job search into a guided decision-making workflow.
 
-* Searches and ranks real-time job listings using a multi-factor scoring algorithm
-* Extracts required skills from job descriptions using an **LLM** (`gpt-4.1-mini`)
-* Extracts skills from a candidate's resume using keyword matching + alias normalization
-* Compares both skill sets to surface strengths and gaps
-* Generates a final structured answer with actionable recommendations
+Instead of only listing jobs, the application helps users answer:
 
-The system uses a **tool-calling + reasoning loop with stateful memory**, simulating how modern AI agents operate.
+- Which jobs match my interests?
+- Which of my existing skills align with this role?
+- What am I missing?
+- What should I improve next?
 
----
+## Key Features
 
-##  Key Features
+- Search jobs based on a user-defined query
+- Rank jobs using a custom scoring approach
+- Extract technical skills from job descriptions using an LLM
+- Detect skills from resume text using keyword matching and alias normalization
+- Compare candidate skills against job requirements
+- Generate a structured analysis with:
+  - job summary
+  - candidate strengths
+  - skill gaps
+  - recommendations
+- Support both a CLI workflow and a Streamlit web interface
 
-*  **Job Search Integration**
+## How It Works
 
-  * Fetches jobs from Remotive API with smart 5-layer scoring (hard filters, role alignment, skill boost, penalties, ranking)
+### 1. Job Search
+The application fetches job listings from an external jobs API and scores them based on keyword relevance, role alignment, and skill-related matches.
 
-*  **Multi-step Agent Workflow**
+### 2. Job Skill Extraction
+Once a job is selected, the system uses an OpenAI model to extract concrete technical skills from the job description.
 
-  * Tool-based execution with state tracking (search → extract (LLM) → resume parse → compare → final answer)
-  * Deduplication guards prevent redundant tool calls
+### 3. Resume Skill Extraction
+The candidate's resume is analyzed using a curated skill list and alias mapping to identify known technologies and tools.
 
-*  **Skill Extraction Engine**
+### 4. Skill Comparison
+The extracted job skills and resume skills are compared to identify overlaps and missing requirements.
 
-  * From job descriptions — LLM-powered (`extract_skills`)
-  * From resume text — keyword matching with alias normalization (`extract_resume_skills`)
+### 5. Final AI Analysis
+The agent produces a structured response with a clear summary of the role, the candidate's strengths, skill gaps, and actionable recommendations.
 
-*  **Skill Gap Analysis**
+## Tech Stack
 
-  * Identifies strengths vs missing skills
+- Python
+- Streamlit
+- OpenAI API
+- Requests
+- Regex and text processing
+- dotenv for environment configuration
 
+## Example Use Case
 
-*  **Low-cost AI usage**
+A user searching for a Python AI Engineer role can:
 
-  * Uses lightweight model (`gpt-4.1-mini`)
+1. enter a job query
+2. paste their resume
+3. view the top job matches
+4. select one job for analysis
+5. receive a breakdown of:
+   - what the role expects
+   - where their profile is strong
+   - which skills are missing
+   - what to learn next
 
----
+## What This Project Demonstrates
 
-##  How It Works
+This project highlights practical software engineering and AI application skills, including:
 
-### Agent Workflow
+- API integration
+- prompt design
+- LLM tool-calling workflows
+- stateful agent orchestration
+- text processing and skill extraction
+- Streamlit application development
+- designing AI systems for real user problems
 
-1. **Search Jobs** — queries Remotive API, scores and returns the top-ranked job
-2. **Extract Job Skills (LLM)** — uses `gpt-4.1-mini` to extract concrete technical skills from the job description
-3. **Extract Resume Skills** — keyword matching against a curated skill list with alias normalization
-4. **Compare Skills** — set intersection/difference to identify strengths and gaps
-5. **Final Structured Answer** — LLM synthesizes all tool results into a coherent recommendation
+## Setup
 
----
-
-
-
-##  Setup Instructions
-
-### 1. Clone Repo
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/your-username/job-search-agent.git
 cd job-search-agent
 ```
 
----
-
-### 2. Create Virtual Environment
+### 2. Create a virtual environment
 
 ```bash
 python -m venv venv
-venv\Scripts\activate   # Windows
+venv\Scripts\activate
 ```
 
----
-
-### 3. Install Dependencies
+### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
----
+### 4. Add environment variables
 
-### 4. Add API Key
+Create a `.env` file and add:
 
-Create `.env` file:
-
-```
+```env
 OPENAI_API_KEY=your_api_key_here
 ```
 
----
+### 5. Run the app
 
-### 5. Run the Agent
+For the CLI version:
 
 ```bash
 python main.py
 ```
 
----
+For the Streamlit version:
 
-##  Tech Stack
+```bash
+streamlit run streamlit_app.py
+```
 
-* Python
-* OpenAI SDK
-* REST APIs (Remotive jobs)
-* Regex / text processing
-* Tool-calling architecture
-* `python-dotenv` for environment management
+## Author
 
----
+Ashu Surana  
+Full Stack Developer | AI Enthusiast
 
-##  Author
-
-**Ashu Surana**
-Fullstack Developer | AI Enthusiast
-
-* Python | Django | React | AI Applications
-* Building intelligent, data-driven systems
+Focused on building practical applications that combine software engineering with AI to solve real-world problems.
 

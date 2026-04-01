@@ -3,7 +3,10 @@ import json
 from app.agent import run_agent
 from app.tools import search_jobs
 
-# Helper: Fetch jobs only
+# CONFIG PAGE
+st.set_page_config(page_title="AI Job Analyzer", layout="centered")
+
+# HELPERS
 def get_jobs_only(query):
     try:
         result = search_jobs(query)
@@ -11,11 +14,9 @@ def get_jobs_only(query):
     except:
         return []
 
-# Page config
-st.set_page_config(page_title="AI Job Skill Analyzer", layout="centered")
-
-st.header(" AI Job Search and Skill Gap Analyzer")
-st.markdown("Find jobs → Click → Analyze skill gaps")
+# HEADER
+st.header(" AI Job Search and Skill Analyzer")
+st.markdown("Find jobs → Select → Analyze skill gaps")
 
 # INPUT
 query = st.text_input(
@@ -25,13 +26,11 @@ query = st.text_input(
 
 resume = st.text_area(
     "📄 Paste Your Resume",
-    height=250
+    height=220
 )
 
-analyze = st.button(" Find Jobs")
-
-# STEP 1: FETCH JOBS
-if analyze:
+# SEARCH BUTTON
+if st.button(" Find Jobs"):
     if not query.strip():
         st.warning("Please enter a job query")
     else:
@@ -43,41 +42,42 @@ if analyze:
         else:
             st.error("No jobs found")
 
-# STEP 2: SHOW JOBS
+# SHOW JOB CARDS
 if "jobs" in st.session_state:
     st.markdown("##  Top Job Matches")
 
-    for i, job in enumerate(st.session_state["jobs"]):
+    jobs = st.session_state["jobs"]
+
+    for i, job in enumerate(jobs):
+
         with st.container():
-            st.markdown(f"""
-            ### {job.get('title')}
-            ** {job.get('company')}**
+            st.markdown(f"###  {job.get('title')}")
+            st.markdown(f" **{job.get('company')}**")
+            st.caption(f"⭐ Score: {job.get('score')}")
 
-            {job.get('description')}
-            """)
+            st.write(job.get("description")[:200] + "...")
 
-            col1, col2 = st.columns([3, 1])
+            col1, col2 = st.columns([1, 1])
 
             with col1:
-                if job.get("url"):
-                    st.markdown(f"[🔗 Apply Now]({job['url']})")
+                if st.button(" Analyze", key=f"analyze_{i}"):
+                    st.session_state["selected_job"] = job
 
             with col2:
-                st.metric("Score", job.get("score", 0))
+                if job.get("url"):
+                    st.link_button(" Apply", job["url"])
 
-            #  SELECT BUTTON
-            if st.button("Analyze This Job", key=f"btn_{i}"):
-                st.session_state["selected_job"] = job
+        st.divider()
 
-# STEP 3: ANALYZE SELECTED JOB
+# ANALYSIS SECTION
 if "selected_job" in st.session_state:
     job = st.session_state["selected_job"]
 
     st.markdown("---")
-    st.markdown("##  Skill Analysis")
+    st.subheader(" Skill Analysis")
 
     if not resume.strip():
-        st.warning(" Please paste your resume to analyze.")
+        st.warning(" Please paste your resume")
     else:
         with st.spinner("Analyzing selected job..."):
             result, _ = run_agent(
@@ -85,8 +85,8 @@ if "selected_job" in st.session_state:
                 resume
             )
 
-        # DISPLAY RESULTS
-       
+        st.success(" Analysis Complete")
+
         sections = result.split("\n\n")
 
         for section in sections:
