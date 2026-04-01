@@ -51,23 +51,7 @@ The agent produces a structured response with a clear summary of the role, the c
 - Python
 - Streamlit
 - OpenAI API
-- Requests
-- Regex and text processing
 - dotenv for environment configuration
-
-## Example Use Case
-
-A user searching for a Python AI Engineer role can:
-
-1. enter a job query
-2. paste their resume
-3. view the top job matches
-4. select one job for analysis
-5. receive a breakdown of:
-   - what the role expects
-   - where their profile is strong
-   - which skills are missing
-   - what to learn next
 
 ## What This Project Demonstrates
 
