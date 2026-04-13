@@ -3,6 +3,8 @@ import json
 from html import escape
 from app.agent import run_agent
 from app.tools import search_jobs
+import io
+from pypdf import PdfReader
 
 # CONFIG PAGE
 st.set_page_config(page_title="AI Job Analyzer", layout="wide")
@@ -109,6 +111,12 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+if "resume_text" not in st.session_state:
+    st.session_state["resume_text"] = ""
+
+if "last_uploaded_pdf_sig" not in st.session_state:
+    st.session_state["last_uploaded_pdf_sig"] = None
+
 # HELPERS
 def get_jobs_only(query):
     try:
@@ -116,6 +124,21 @@ def get_jobs_only(query):
         return json.loads(result)
     except:
         return []
+
+def extract_text_from_pdf(uploaded_file):
+    try:
+        pdf_bytes = uploaded_file.getvalue()
+        reader = PdfReader(io.BytesIO(pdf_bytes))
+        parts = []
+
+        for page in reader.pages:
+            text = (page.extract_text() or "").strip()
+            if text:
+                parts.append(text)
+
+        return "\n\n".join(parts)
+    except Exception:
+        return ""
 
 # HEADER
 st.markdown(
@@ -144,22 +167,35 @@ with left_col:
             placeholder="e.g. Python AI Engineer, Full Stack Developer"
         )
 
-        resume = st.text_area(
+        resume_box = st.empty()
+
+        uploaded_resume = st.file_uploader(
+            "Upload Resume (PDF)",
+            type=["pdf"],
+            help="Upload a PDF to auto-fill the resume box."
+        )
+
+        if uploaded_resume is None:
+            st.session_state["last_uploaded_pdf_sig"] = None
+        else:
+            current_sig = f"{uploaded_resume.name}:{uploaded_resume.size}"
+
+            if st.session_state["last_uploaded_pdf_sig"] != current_sig:
+                extracted = extract_text_from_pdf(uploaded_resume)
+                st.session_state["last_uploaded_pdf_sig"] = current_sig
+
+                if extracted.strip():
+                    st.session_state["resume_text"] = extracted
+                    st.success("PDF resume loaded into the text box.")
+                else:
+                    st.warning("Could not extract text from this PDF.")
+
+        resume_box.text_area(
             "Paste Your Resume",
+            key="resume_text",
             height=320,
             placeholder="Paste your resume text here..."
         )
-
-        uploaded_resume = st.file_uploader(
-            "Upload Resume (UI only)",
-            type=["pdf", "docx", "txt"],
-            help="UI placeholder for now. Parsing and auto-fill logic will be added later.",
-        )
-
-        if uploaded_resume is not None:
-            st.caption("Resume file selected. For now, please still paste resume text above for analysis.")
-
-        st.markdown("<div style='height: 0.8rem;'></div>", unsafe_allow_html=True)
 
         # SEARCH BUTTON
         if st.button("Find Jobs", use_container_width=True):
@@ -225,21 +261,21 @@ with right_col:
                         if job.get("url"):
                             st.link_button("Apply", job["url"], use_container_width=True)
 
-# ANALYSIS SECTION
 if "selected_job" in st.session_state:
     job = st.session_state["selected_job"]
+    resume_text = st.session_state.get("resume_text", "")
 
     with st.container(border=True):
         st.subheader("Skill Analysis")
         st.markdown('<div class="analysis-box">Selected role analysis appears below.</div>', unsafe_allow_html=True)
 
-        if not resume.strip():
+        if not resume_text.strip():
             st.warning("Please paste your resume")
         else:
             with st.spinner("Analyzing selected job..."):
                 result, _ = run_agent(
                     f"{job['title']} {job['description']}",
-                    resume
+                    resume_text
                 )
 
             st.success("Analysis Complete")
