@@ -1,6 +1,6 @@
 from openai import OpenAI
 from app.tools import search_jobs, extract_skills, compare_skills, extract_resume_skills
-from app.prompts import SYSTEM_PROMPT
+from app.prompts import SYSTEM_PROMPT, ANALYSIS_PROMPT, COVER_LETTER_PROMPT
 import json
 import os
 from dotenv import load_dotenv
@@ -155,7 +155,7 @@ def run_agent(user_input, resume_text=None):
 
     for step in range(7):
         response = client.chat.completions.create(
-            model="gpt-4.1-mini",
+            model="gpt-4o-mini",
             messages=messages,
             tools=tools
         )
@@ -197,3 +197,97 @@ def run_agent(user_input, resume_text=None):
             return msg.content, job_data
 
     return "Agent stopped", job_data
+
+def run_selected_job_analysis(selected_job, resume_text):
+    title = str(selected_job.get("title", "Unknown Role"))
+    company = str(selected_job.get("company", "Unknown Company"))
+    description = str(selected_job.get("description", "")).strip()
+
+    if not description:
+        return "Could not analyze because selected job description is empty.", {}
+
+    job_skills = extract_skills(description[:2000])
+    resume_skills = extract_resume_skills(resume_text or "")
+    comparison = compare_skills(resume_skills, job_skills)
+
+    user_payload = f"""
+Selected Job:
+Title: {title}
+Company: {company}
+Description: {description}
+
+Resume:
+{resume_text}
+
+Extracted Job Skills:
+{job_skills}
+
+Extracted Resume Skills:
+{resume_skills}
+
+Skill Comparison:
+{comparison}
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": ANALYSIS_PROMPT},
+            {"role": "user", "content": user_payload},
+        ],
+        temperature=0
+    )
+
+    final_text_full = response.choices[0].message.content
+    
+    # Split text from JSON (Robustly)
+    if "MANDATORY UI_STATS_JSON:" in final_text_full:
+        parts = final_text_full.split("MANDATORY UI_STATS_JSON:")
+        final_text = parts[0].strip()
+        json_str = parts[1].strip()
+        
+        # Remove potential markdown code blocks
+        if "```json" in json_str:
+            json_str = json_str.split("```json")[1].split("```")[0].strip()
+        elif "```" in json_str:
+            json_str = json_str.split("```")[1].split("```")[0].strip()
+            
+        try:
+            stats = json.loads(json_str)
+        except Exception as e:
+            print(f"JSON Parse Error: {e}")
+            stats = {"matched_skills": [], "missing_skills": []}
+    else:
+        final_text = final_text_full
+        stats = {"matched_skills": [], "missing_skills": []}
+
+    return final_text, {
+        "job_skills": job_skills,
+        "resume_skills": resume_skills,
+        "comparison": comparison,
+        "stats": stats # New AI-driven stats
+    }
+
+def generate_cover_letter(job_details, resume_text, tone="Professional"):
+    title = job_details.get("title", "Unknown Role")
+    company = job_details.get("company", "Unknown Company")
+    description = job_details.get("description", "")
+
+    prompt = COVER_LETTER_PROMPT.format(
+        title=title,
+        company=company,
+        description=description[:2000],
+        resume=resume_text[:2000],
+        tone=tone
+    )
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You are a professional career writer."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.7
+    )
+
+    return response.choices[0].message.content

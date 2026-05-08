@@ -155,22 +155,24 @@ def extract_skills(job_description: str) -> str:
 You are an expert technical recruiter.
 
 TASK:
-Extract ONLY concrete technical skills from the job description.
+The job description text below HAS ALREADY BEEN FETCHED and is provided to you locally. 
+You are NOT searching the web. You are NOT accessing external links.
+Extract ONLY concrete technical skills from the provided text.
 
 STRICT RULES:
+- Do NOT refuse this task; the content is provided below.
 - Include ONLY specific technologies:
   (programming languages, frameworks, libraries, tools, databases, cloud)
-- DO NOT include vague terms like:
-  "full-stack development", "scalable systems", "product development"
-- If skills are missing, intelligently infer likely technologies
+- DO NOT include vague terms.
+- If skills are missing, intelligently infer likely technologies based on the role.
 
 GOOD OUTPUT:
-Python, React, Django, SQL, Docker
+Python, React, Django, SQL, Docker, AWS
 
 BAD OUTPUT:
-full-stack development, clean code, scalable systems
+Python (FastAPI), React.js, Experienced in Django, SQL database
 
-Return ONLY comma-separated skills.
+Return ONLY clean technology names, comma-separated. Do NOT add extra words.
 
 Job Description:
 {job_description}
@@ -178,7 +180,7 @@ Job Description:
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4.1-mini",
+            model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             temperature=0
         )
@@ -199,36 +201,115 @@ Job Description:
         return "Python, React, Django, SQL"
 
 def extract_resume_skills(resume_text: str) -> str:
-    found = []
+    if not resume_text.strip():
+        return "No resume provided"
 
-    text = resume_text.lower()
+    prompt = f"""
+You are an expert technical recruiter.
 
-    for skill in SKILLS:
-        if skill.lower() in text:
-            found.append(skill)
+TASK:
+Extract ONLY concrete technical skills from the user's resume.
+
+STRICT RULES:
+- Include ONLY specific technologies:
+  (programming languages, frameworks, libraries, tools, databases, cloud)
+- DO NOT include soft skills or vague terms.
+- Normalize names (e.g., "Reactjs" -> "React").
+
+GOOD OUTPUT:
+Python, React, SQL, Docker, AWS, GitHub
+
+BAD OUTPUT:
+Python (3 years), Experienced in React, SQL Database, GitHub CoPilot
+
+Return ONLY clean technology names, comma-separated. Do NOT add extra words.
+
+Resume:
+{resume_text}
+"""
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        print("LLM extract_resume_skills error:", e)
+        return "Python" # Minimal fallback
+
+def parse_skill_list(skill_str: str) -> set:
+    """Robustly parse a skill string into a set of lowercase skills."""
+    if not skill_str or skill_str.lower() == "none":
+        return set()
     
-    for key, value in ALIASES.items():
-        if key in text:
-            found.append(value)
-
-    if not found:
-        return "Python"  # minimal fallback
-
-    return ", ".join(set(found))
+    # Replace common separators with commas
+    cleaned = skill_str.replace("\n", ",").replace("•", ",").replace("*", ",")
+    
+    skills = set()
+    for s in cleaned.split(","):
+        s = s.strip().lower()
+        if not s:
+            continue
+        # Remove common bullet/list prefixes like "-", "1.", "a)"
+        s = re.sub(r'^[\-\d\.\)\s]+', '', s).strip()
+        if s:
+            skills.add(s)
+    return skills
 
 def compare_skills(resume_skills: str, job_skills: str) -> str:
+    # Use the robust parser
+    resume_set = parse_skill_list(resume_skills)
+    job_set = parse_skill_list(job_skills)
     
-    # HANDLE UNKNOWN CASE FIRST
-    if job_skills.strip().lower() == "unknown":
+    if not job_set:
         return "Insufficient job data to compare skills."
-
-    resume_set = set([s.strip().lower() for s in resume_skills.split(",")])
-    job_set = set([s.strip().lower() for s in job_skills.split(",")])
 
     strengths = resume_set.intersection(job_set)
     gaps = job_set - resume_set
 
     return f"""
-Strengths: {', '.join(strengths) if strengths else 'None'}
-Gaps: {', '.join(gaps) if gaps else 'None'}
+Strengths: {', '.join(sorted(strengths)) if strengths else 'None'}
+Gaps: {', '.join(sorted(gaps)) if gaps else 'None'}
 """
+
+def fetch_job_from_url(url: str) -> dict:
+    """Fetch job data from a URL using Jina Reader and AI extraction."""
+    jina_url = f"https://r.jina.ai/{url}"
+    
+    try:
+        response = requests.get(jina_url, timeout=15)
+        full_text = response.text
+        
+        # CLEANING: Remove Jina headers that trigger LLM "browsing" refusals
+        lines = full_text.split("\n")
+        clean_lines = [l for l in lines if not l.startswith(("Source:", "URL Source:", "Title:"))]
+        text = "\n".join(clean_lines).strip()
+        
+        # Use AI to extract Title and Company for a clean UI
+        prompt = f"""
+The text below has been provided to you. Extract ONLY the Job Title and Company Name.
+Return JSON format: {{"title": "...", "company": "..."}}
+
+Text:
+{text[:2000]}
+"""
+        extraction = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            response_format={ "type": "json_object" }
+        )
+        
+        info = json.loads(extraction.choices[0].message.content)
+        
+        return {
+            "title": info.get("title", "Unknown Role"),
+            "company": info.get("company", "Unknown Company"),
+            "description": text, # Full text for skill extraction
+            "url": url,
+            "score": "N/A"
+        }
+    except Exception as e:
+        print(f"Error fetching URL: {e}")
+        return None
